@@ -77,7 +77,7 @@ module bp_nonsynth_example_tracer
   always_ff @(negedge clk_i)
     begin
       if (~reset_i & commit_pkt.instret)
-        $fwrite(file, "%0d,%x,%x,%x,%x,%x,%s", cycle_cnt, decode_pkt.m_mode, decode_pkt.s_mode, decode_pkt.u_mode, trans_pkt.mstatus_sum, trans_pkt.mstatus_mxr , commit_pkt.pc, "instr");
+        $fwrite(file, "%0d,%x,%x,%x,%x,%x,%x, %s", cycle_cnt, decode_pkt.m_mode, decode_pkt.s_mode, decode_pkt.u_mode, trans_pkt.mstatus_sum, trans_pkt.mstatus_mxr , commit_pkt.pc, "instr");
 
       if (~reset_i)
         $fwrite(file, "\n");
