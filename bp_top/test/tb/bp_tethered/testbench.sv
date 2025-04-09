@@ -36,6 +36,7 @@ module testbench
    , parameter pc_profile_p                = 0
    , parameter br_profile_p                = 0
    , parameter dev_trace_p                 = 0
+   , parameter example_trace_p             = 0
 
    // COSIM parameters
    , parameter cosim_p                     = 0
@@ -502,6 +503,21 @@ module testbench
        ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)
 
        ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
+       );
+
+  bind bp_be_top
+    bp_nonsynth_example_tracer
+     #(.bp_params_p(bp_params_p))
+     example_tracer
+      (.clk_i(clk_i && !testbench.freeze)
+       ,.reset_i(reset_i || !testbench.example_trace_p)
+
+       ,.mhartid_i(director.cfg_bus_cast_i.core_id)
+
+       ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
+       ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)
+       ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
+       ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt_cast_o)
        );
 
   bind bp_me_clint_slice
