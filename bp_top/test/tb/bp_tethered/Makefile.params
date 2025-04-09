@@ -40,7 +40,7 @@ export TB_PARAMS  = \
                     -pvalue+pc_profile_p=$(PC_PROFILE_P) \
                     -pvalue+br_profile_p=$(BR_PROFILE_P) \
                     -pvalue+dev_trace_p=$(DEV_TRACE_P) \
-					-pvalue+arch_trace_p=$(EXAMPLE_TRACE_P) \
+					-pvalue+arch_trace_p=$(ARCH_TRACE_P) \
 					\
                     -pvalue+cosim_p=$(COSIM_P) \
 					-pvalue+max_instr_p=$(MAX_INSTR_P) \

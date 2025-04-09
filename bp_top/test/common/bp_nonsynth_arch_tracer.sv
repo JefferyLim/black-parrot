@@ -70,7 +70,7 @@ module bp_nonsynth_arch_tracer
   string file_name;
   always_ff @(negedge reset_i)
     begin
-      file_name = $sformatf("%s_%x.arch", example_trace_file_p, mhartid_i);
+      file_name = $sformatf("%s_%x.arch", arch_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
     end
 
