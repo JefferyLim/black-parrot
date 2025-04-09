@@ -3,7 +3,7 @@
 `include "bp_top_defines.svh"
 `include "bp_be_defines.svh"
 
-module bp_nonsynth_example_tracer
+module bp_nonsynth_uarch_tracer
   import bp_common_pkg::*;
   import bp_be_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -11,7 +11,7 @@ module bp_nonsynth_example_tracer
      `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
      `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
 
-    , parameter example_trace_file_p = "example"
+    , parameter uarch_trace_file_p = "uarch"
     )
    (input                         clk_i
     , input                       reset_i
@@ -70,7 +70,7 @@ module bp_nonsynth_example_tracer
   string file_name;
   always_ff @(negedge reset_i)
     begin
-      file_name = $sformatf("%s_%x.example", example_trace_file_p, mhartid_i);
+      file_name = $sformatf("%s_%x.uarch", uarch_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
     end
 
