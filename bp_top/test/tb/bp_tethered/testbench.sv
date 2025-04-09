@@ -36,7 +36,7 @@ module testbench
    , parameter pc_profile_p                = 0
    , parameter br_profile_p                = 0
    , parameter dev_trace_p                 = 0
-   , parameter example_trace_p             = 0
+   , parameter cache_trace_p               = 0
 
    // COSIM parameters
    , parameter cosim_p                     = 0
@@ -506,11 +506,11 @@ module testbench
        );
 
   bind bp_be_top
-    bp_nonsynth_example_tracer
+    bp_nonsynth_cache_tracer
      #(.bp_params_p(bp_params_p))
-     example_tracer
+     cache_tracer
       (.clk_i(clk_i && !testbench.freeze)
-       ,.reset_i(reset_i || !testbench.example_trace_p)
+       ,.reset_i(reset_i || !testbench.cache_trace_p)
 
        ,.mhartid_i(director.cfg_bus_cast_i.core_id)
 
