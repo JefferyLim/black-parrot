@@ -510,7 +510,7 @@ module testbench
      #(.bp_params_p(bp_params_p))
      arch_tracer
       (.clk_i(clk_i && !testbench.freeze)
-       ,.reset_i(reset_i || !testbench.example_trace_p)
+       ,.reset_i(reset_i || !testbench.arch_trace_p)
 
        ,.mhartid_i(director.cfg_bus_cast_i.core_id)
 
