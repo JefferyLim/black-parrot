@@ -67,28 +67,28 @@ module bp_nonsynth_uarch_tracer
   string sched_fp;
   always_ff @(negedge reset_i)
     begin
-      sched_fp   = $sformatf("%s_%x.sched", uarch_trace_file_p, mhartid_i);
-      sched_file = $fopen(sched_file, "w");
-      if (sched_file)  $display("File was opened successfully : %0d", sched_file);
-              else     $display("File was NOT opened successfully : %0d", sched_file);
+      sched_file   = $sformatf("%s_%x.sched", uarch_trace_file_p, mhartid_i);
+      sched_fp = $fopen(sched_file, "w");
+      if (sched_fp)  $display("File was opened successfully : %0d", sched_fp);
+              else     $display("File was NOT opened successfully : %0d", sched_fp);
       $fwrite(sched_file, "cycle count\n");
     end
 
   always_ff @(negedge clk_i)
     begin
       if (~reset_i & issue_pkt.v)
-        $fwrite(sched_file, "issue   : %0d, %x, %x,\n", cycle_cnt, issue_pkt.pc, fault);
+        $fwrite(sched_fp, "issue   : %0d, %x, %x,\n", cycle_cnt, issue_pkt.pc, fault);
       if (~reset_i & dispatch_pkt.v)
-        $fwrite(sched_file, "dispatch: %0d, %x, %x\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.exception.mispredict);
+        $fwrite(sched_fp, "dispatch: %0d, %x, %x\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.exception.mispredict);
       if (~reset_i & commit_pkt.instret)
-        $fwrite(sched_file, "commit: %0d,%x\n", cycle_cnt, commit_pkt.pc);
+        $fwrite(sched_fp, "commit: %0d,%x\n", cycle_cnt, commit_pkt.pc);
     end
 
   final
     begin
-      $fwrite(sched_file, "=============================\n");
-      $fwrite(sched_file, "Hello World:\n");
-      $fclose(sched_file);
+      $fwrite(sched_fp, "=============================\n");
+      $fwrite(sched_fp, "Hello World:\n");
+      $fclose(sched_fp);
     end
 
 endmodule
