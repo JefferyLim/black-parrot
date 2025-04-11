@@ -505,14 +505,16 @@ module testbench
        ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
        );
 
-  bind bp_be_top
+  bind bp_core_minimal
     bp_nonsynth_uarch_tracer
      #(.bp_params_p(bp_params_p))
      uarch_tracer
       (.clk_i(clk_i && !testbench.freeze)
-       ,.reset_i(reset_i || !testbench.uarch_trace_p)
+       ,.reset_i(reset_i)
 
-       ,.mhartid_i(director.cfg_bus_cast_i.core_id)
+       ,.mhartid_i(be.director.cfg_bus_cast_i.core_id)
+       ,.issue_pkt_i(be.scheduler.issue_pkt_cast_o)
+       ,.dispatch_pkt_i(be.scheduler.dispatch_pkt_cast_o)
 
        ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
        ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)

@@ -18,6 +18,9 @@ module bp_nonsynth_uarch_tracer
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
+    , input [issue_pkt_width_lp-1:0] issue_pkt_i
+    , input [dispatch_pkt_width_lp-1:0] dispatch_pkt_i
+
     , input [decode_info_width_lp-1:0] decode_pkt_i
     , input [trans_info_width_lp-1:0] trans_pkt_i
     , input [retire_pkt_width_lp-1:0] retire_pkt_i
@@ -26,6 +29,12 @@ module bp_nonsynth_uarch_tracer
 
 
   `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
+
+  bp_be_issue_pkt_s issue_pkt;
+  assign issue_pkt = issue_pkt_i;
+
+  bp_be_dispatch_pkt_s dispatch_pkt;
+  assign dispatch_pkt = dispatch_pkt_i;
 
   bp_be_decode_info_s decode_pkt;
   assign decode_pkt = decode_pkt_i;
@@ -51,42 +60,35 @@ module bp_nonsynth_uarch_tracer
      ,.count_o(cycle_cnt)
      );
 
-  integer branch_histo [longint];
-  integer miss_histo   [longint];
+  logic fault;
+  assign fault = issue_pkt.instr_access_fault | issue_pkt.instr_page_fault | issue_pkt.illegal_instr | issue_pkt.icache_miss;
 
-  integer instr_cnt;
-  integer attaboy_cnt;
-  integer redirect_cnt;
-  integer br_cnt;
-  integer jal_cnt;
-  integer jalr_cnt;
-  integer call_cnt;
-  integer ret_cnt;
-  integer btb_hit_cnt;
-  integer ras_hit_cnt;
-  integer bht_hit_cnt;
-
-  integer file;
-  string file_name;
+  integer sched_file;
+  string sched_fp;
   always_ff @(negedge reset_i)
     begin
-      file_name = $sformatf("%s_%x.uarch", uarch_trace_file_p, mhartid_i);
-      file      = $fopen(file_name, "w");
+      sched_fp   = $sformatf("%s_%x.sched", uarch_trace_file_p, mhartid_i);
+      sched_file = $fopen(sched_file, "w");
+      if (sched_file)  $display("File was opened successfully : %0d", sched_file);
+              else     $display("File was NOT opened successfully : %0d", sched_file);
+      $fwrite(sched_file, "cycle count\n");
     end
 
   always_ff @(negedge clk_i)
     begin
+      if (~reset_i & issue_pkt.v)
+        $fwrite(sched_file, "issue   : %0d, %x, %x,\n", cycle_cnt, issue_pkt.pc, fault);
+      if (~reset_i & dispatch_pkt.v)
+        $fwrite(sched_file, "dispatch: %0d, %x, %x\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.exception.mispredict);
       if (~reset_i & commit_pkt.instret)
-        $fwrite(file, "%0d,%x,%x,%x,%x,%x,%x, %s", cycle_cnt, decode_pkt.m_mode, decode_pkt.s_mode, decode_pkt.u_mode, trans_pkt.mstatus_sum, trans_pkt.mstatus_mxr , commit_pkt.pc, "instr");
-
-      if (~reset_i)
-        $fwrite(file, "\n");
+        $fwrite(sched_file, "commit: %0d,%x\n", cycle_cnt, commit_pkt.pc);
     end
 
   final
     begin
-      $fwrite(file, "=============================\n");
-      $fwrite(file, "Hello World:\n");
+      $fwrite(sched_file, "=============================\n");
+      $fwrite(sched_file, "Hello World:\n");
+      $fclose(sched_file);
     end
 
 endmodule
