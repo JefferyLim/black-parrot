@@ -117,18 +117,23 @@ assign reservation_pkt = reservation_i;
   wire is_req = reservation_pkt.v & (reservation_pkt.decode.pipe_mem_early_v | reservation_pkt.decode.pipe_mem_final_v);
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
   
-	always_ff @(negedge clk_i)
+
+  always_ff @(negedge clk_i)
   begin
-      if (~reset_i & is_req)
+	if (~reset_i & is_req)
         $fwrite(pipe_mem_fp, "pipe_mem: %0d, %x, %x, %x, %x, %x, %x, %x\n", cycle_cnt, reservation_pkt.pc, reservation_pkt.decode.dcache_r_v, reservation_pkt.decode.dcache_w_v, eaddr, store_access_fault_v_i, load_access_fault_v_i, flush_i);
-       if (~reset_i & (store_access_fault_v_i | load_access_fault_v_i))
+       
+	if (~reset_i & (store_access_fault_v_i | load_access_fault_v_i))
 		$fwrite(pipe_mem_fp, "pipe_mem: %0d, %x, %x\n", cycle_cnt, store_access_fault_v_i, load_access_fault_v_i);
+  end
 
-      if (~reset_i & (dispatch_pkt.exception.store_page_fault | dispatch_pkt.exception.load_page_fault))
+  always_ff @(posedge clk_i or negedge clk_i)
+  begin
+	if (~reset_i & (priv_fault_i))
 		$fwrite(pipe_mem_fp, "page table walker: %0d, %x, %x, %x, %x\n", cycle_cnt, dispatch_pkt.pc, priv_fault_i,	dispatch_pkt.exception.store_page_fault, dispatch_pkt.exception.load_page_fault);
+  end
 
-
-  end 
+ 
   final
     begin
       $fwrite(sched_fp, "=============================\n");
