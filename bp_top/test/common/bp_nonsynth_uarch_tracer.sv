@@ -108,6 +108,8 @@ assign reservation_pkt = reservation_i;
         $fwrite(sched_fp, "dispatch: %0d, %x, %x, %x, %x, %x\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.v, dispatch_pkt.queue_v, poison_isd_i, dispatch_pkt.exception.mispredict);
       if (~reset_i & commit_pkt.instret)
         $fwrite(sched_fp, "commit: %0d,%x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+      if (~reset_i & commit_pkt.exception)
+        $fwrite(sched_fp, "commit: %0d,%x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
     end
 
   wire [dword_width_gp-1:0] rs1 = reservation_pkt.isrc1;
