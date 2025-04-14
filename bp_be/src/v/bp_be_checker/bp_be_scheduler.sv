@@ -100,6 +100,8 @@ module bp_be_scheduler
      ,.count_o(ptw_count_lo)
      ,.addr_o(ptw_addr_lo)
      ,.pte_o(ptw_pte_lo)
+     
+     ,.priv_fault_o()
 
      ,.v_i(ptw_v_li)
      ,.data_i(ptw_data_li)

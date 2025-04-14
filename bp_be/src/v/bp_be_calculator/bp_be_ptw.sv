@@ -34,6 +34,9 @@ module bp_be_ptw
    , output logic [dword_width_gp-1:0]        addr_o
    , output logic [dword_width_gp-1:0]        pte_o
 
+   // EC513
+   , output logic                             priv_fault_o
+
    , input                                    v_i
    , input [dword_width_gp-1:0]               data_i
    );
@@ -93,6 +96,7 @@ module bp_be_ptw
   wire s_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_S) & (instr_r | ~trans_info_cast_i.mstatus_sum);
   wire u_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_U);
   wire priv_fault               = pte_is_leaf & ((dcache_pte.u & s_priv_req) | (~dcache_pte.u & u_priv_req));
+  assign priv_fault_o = priv_fault;
   wire misaligned_superpage     = pte_is_leaf & |level_r & |dcache_pte.ppn[page_idx_width_p*(level_r-1'b1)+:page_idx_width_p];
 
   wire ad_fault                 = pte_is_leaf & (~dcache_pte.a | (store_r & ~dcache_pte.d));

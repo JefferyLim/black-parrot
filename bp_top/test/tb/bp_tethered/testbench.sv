@@ -514,7 +514,18 @@ module testbench
 
        ,.mhartid_i(be.director.cfg_bus_cast_i.core_id)
        ,.issue_pkt_i(be.scheduler.issue_pkt_cast_o)
+
        ,.dispatch_pkt_i(be.scheduler.dispatch_pkt_cast_o)
+       ,.fe_queue_read_i(be.scheduler.issue_queue.read_i)
+       ,.poison_isd_i(be.scheduler.poison_isd_i)
+
+       ,.reservation_i(be.calculator.pipe_mem.reservation_i)
+
+	   ,.store_access_fault_v_i(be.calculator.pipe_mem.store_page_fault_v_o)//store_access_fault_v_o)
+	   ,.load_access_fault_v_i(be.calculator.pipe_mem.load_page_fault_v_o)//load_access_fault_v_o)
+	   ,.flush_i(be.calculator.pipe_mem.flush_i)
+
+	   ,.priv_fault_i(be.scheduler.ptw.priv_fault_o)
 
        ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
        ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)
