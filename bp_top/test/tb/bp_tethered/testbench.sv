@@ -505,19 +505,23 @@ module testbench
        ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
        );
 
-  bind bp_be_top
+  bind bp_core_minimal
     bp_nonsynth_cache_tracer
      #(.bp_params_p(bp_params_p))
      cache_tracer
       (.clk_i(clk_i && !testbench.freeze)
        ,.reset_i(reset_i || !testbench.cache_trace_p)
 
-       ,.mhartid_i(director.cfg_bus_cast_i.core_id)
+       ,.mhartid_i(be.director.cfg_bus_cast_i.core_id)
 
        ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
        ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)
        ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
        ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt_cast_o)
+ //      ,.icache_pkt_i(fe.icache.icache_pkt_cast_i)
+       ,.issue_pkt_i(be.scheduler.issue_pkt_cast_o)
+ //      ,.cache_req_v_i(be.dcache.cache_req_v_o)
+ //      ,.cache_req_yumi_i(be.calculator.pipe_mem.cache_req_yumi_i)
        );
 
   bind bp_me_clint_slice
