@@ -36,6 +36,7 @@ module testbench
    , parameter pc_profile_p                = 0
    , parameter br_profile_p                = 0
    , parameter dev_trace_p                 = 0
+   , parameter cache_trace_p               = 0
 
    // COSIM parameters
    , parameter cosim_p                     = 0
@@ -502,6 +503,35 @@ module testbench
        ,.fe_cmd_yumi_i(director.fe_cmd_yumi_i)
 
        ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
+       );
+
+  bind bp_core_minimal
+    bp_nonsynth_cache_tracer
+     #(.bp_params_p(bp_params_p))
+     cache_tracer
+      (.clk_i(clk_i && !testbench.freeze)
+       ,.reset_i(reset_i || !testbench.cache_trace_p)
+
+       ,.mhartid_i(be.director.cfg_bus_cast_i.core_id)
+
+       ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
+       ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)
+       ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
+       ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt_cast_o)
+       ,.icache_pkt_i(fe.icache.icache_pkt_cast_i)
+       ,.issue_pkt_i(be.scheduler.issue_pkt_cast_o)
+       ,.cache_req_v_i(be.calculator.pipe_mem.dcache.cache_req_v_o)
+       ,.cache_req_yumi_i(be.calculator.pipe_mem.cache_req_yumi_i)
+
+ 	,.cache_req_metadata_v_o(be.calculator.pipe_mem.dcache.cache_req_metadata_v_o)
+ 	,.data_mem_pkt_v_i(be.calculator.pipe_mem.dcache.data_mem_pkt_v_i)
+ 	,.data_mem_pkt_yumi_o(be.calculator.pipe_mem.dcache.data_mem_pkt_yumi_o)
+ 	,.stat_mem_pkt_v_i(be.calculator.pipe_mem.dcache.stat_mem_pkt_v_i)
+ 	,.stat_mem_pkt_yumi_o(be.calculator.pipe_mem.dcache.stat_mem_pkt_yumi_o)
+ 	,.wbuf_v_li(be.calculator.pipe_mem.dcache.wbuf_v_li)
+ 	,.wbuf_v_lo(be.calculator.pipe_mem.dcache.wbuf_v_lo)
+ 	,.wbuf_yumi_li(be.calculator.pipe_mem.dcache.wbuf_yumi_li)
+
        );
 
   bind bp_me_clint_slice
