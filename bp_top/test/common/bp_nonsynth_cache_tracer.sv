@@ -2,10 +2,12 @@
 `include "bp_common_defines.svh"
 `include "bp_top_defines.svh"
 `include "bp_be_defines.svh"
+`include "bp_fe_defines.svh"
 
 module bp_nonsynth_cache_tracer
   import bp_common_pkg::*;
   import bp_be_pkg::*;
+  import bp_fe_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
 	 `declare_bp_proc_params(bp_params_p)
      `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
@@ -17,11 +19,23 @@ module bp_nonsynth_cache_tracer
     , input                       reset_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
-
+	
     , input [decode_info_width_lp-1:0] decode_pkt_i
     , input [trans_info_width_lp-1:0] trans_pkt_i
     , input [retire_pkt_width_lp-1:0] retire_pkt_i
     , input [commit_pkt_width_lp-1:0] commit_pkt_i
+ //   , input [icache_pkt_width_lp-1:0] icache_pkt_i
+    , input [issue_pkt_width_lp-1:0] issue_pkt_i
+ //   , input cache_req_v_i
+ //   , input cache_req_yumi_i
+ //   , input cache_req_metadata_v_o
+ //   , input data_mem_pkt_v_i
+ //   , input data_mem_pkt_yumi_o
+ //   , input stat_mem_pkt_v_i
+ //   , input stat_mem_pkt_yumi_o
+ //   , input wbuf_v_li
+ //   , input wbuf_v_lo
+ //   , input wbuf_yumi_li
     );
 
 
@@ -38,6 +52,20 @@ module bp_nonsynth_cache_tracer
       
   bp_be_commit_pkt_s commit_pkt;
   assign commit_pkt = commit_pkt_i;
+
+  bp_be_issue_pkt_s issue_pkt;
+  assign issue_pkt = issue_pkt_i;
+
+ // cache_req_v_o;
+ // assign cache_req_v_o = cache_req_v_i;
+
+ // cache_req_yumi_i;
+ // assign cache_req_yumi_o = cache_req_yumi_i;
+
+ // bp_fe_icache_pkt_s icache_pkt;
+ // assign icache_pkt = icache_pkt_i;
+
+
 
   logic [29:0] cycle_cnt;
   bsg_counter_clear_up
@@ -77,7 +105,7 @@ module bp_nonsynth_cache_tracer
   always_ff @(negedge clk_i)
     begin
       if (~reset_i & commit_pkt.instret)
-        $fwrite(file, "%0d,%x,%x,%x,%x,%x,%x, %s", cycle_cnt, decode_pkt.m_mode, decode_pkt.s_mode, decode_pkt.u_mode, trans_pkt.mstatus_sum, trans_pkt.mstatus_mxr , commit_pkt.pc, "instr");
+        $fwrite(file, "%0d,%x,%x,%x,%x,%x,%x,%x,%s", cycle_cnt, decode_pkt.m_mode, decode_pkt.s_mode, decode_pkt.u_mode, trans_pkt.mstatus_sum, trans_pkt.mstatus_mxr , commit_pkt.pc, issue_pkt.icache_miss, , "instr");
 
       if (~reset_i)
         $fwrite(file, "\n");
