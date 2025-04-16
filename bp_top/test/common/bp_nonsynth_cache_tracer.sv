@@ -14,6 +14,7 @@ module bp_nonsynth_cache_tracer
      `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
 
     , parameter cache_trace_file_p = "cache"
+    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
     )
    (input                         clk_i
     , input                       reset_i
@@ -24,18 +25,18 @@ module bp_nonsynth_cache_tracer
     , input [trans_info_width_lp-1:0] trans_pkt_i
     , input [retire_pkt_width_lp-1:0] retire_pkt_i
     , input [commit_pkt_width_lp-1:0] commit_pkt_i
- //   , input [icache_pkt_width_lp-1:0] icache_pkt_i
+    , input [icache_pkt_width_lp-1:0] icache_pkt_i
     , input [issue_pkt_width_lp-1:0] issue_pkt_i
- //   , input cache_req_v_i
- //   , input cache_req_yumi_i
- //   , input cache_req_metadata_v_o
- //   , input data_mem_pkt_v_i
- //   , input data_mem_pkt_yumi_o
- //   , input stat_mem_pkt_v_i
- //   , input stat_mem_pkt_yumi_o
- //   , input wbuf_v_li
- //   , input wbuf_v_lo
- //   , input wbuf_yumi_li
+    , input cache_req_v_i
+    , input cache_req_yumi_i
+    , input cache_req_metadata_v_o
+    , input data_mem_pkt_v_i
+    , input data_mem_pkt_yumi_o
+    , input stat_mem_pkt_v_i
+    , input stat_mem_pkt_yumi_o
+    , input wbuf_v_li
+    , input wbuf_v_lo
+    , input wbuf_yumi_li
     );
 
 
