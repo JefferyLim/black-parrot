@@ -521,17 +521,18 @@ module testbench
 
        ,.reservation_i(be.calculator.pipe_mem.reservation_i)
 
-	   ,.store_access_fault_v_i(be.calculator.pipe_mem.store_page_fault_v_o)//store_access_fault_v_o)
-	   ,.load_access_fault_v_i(be.calculator.pipe_mem.load_page_fault_v_o)//load_access_fault_v_o)
+	   ,.store_page_fault_v_i(be.calculator.pipe_mem.store_page_fault_v_o)
+	   ,.load_page_fault_v_i(be.calculator.pipe_mem.load_page_fault_v_o)
 	   ,.flush_i(be.calculator.pipe_mem.flush_i)
 
-	   ,.priv_fault_i(be.scheduler.ptw.priv_fault_o)
+	   ,.priv_fault_i(be.scheduler.ptw.priv_fault)
 
        ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
        ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)
        ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
        ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt_cast_o)
-       );
+	   ,.late_wb_pkt_i(be.calculator.pipe_mem.late_wb_pkt_o)       
+);
 
   bind bp_me_clint_slice
     bp_me_nonsynth_dev_tracer

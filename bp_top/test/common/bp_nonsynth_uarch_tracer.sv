@@ -18,23 +18,32 @@ module bp_nonsynth_uarch_tracer
     , input                       reset_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
-
-    , input [issue_pkt_width_lp-1:0] issue_pkt_i
+	
+    // Issue queue related signals
+	, input [issue_pkt_width_lp-1:0] issue_pkt_i
     , input [dispatch_pkt_width_lp-1:0] dispatch_pkt_i
     , input fe_queue_read_i
+
+	// Squash signal
     , input poison_isd_i
 
+    // Instructions in the calculator pipelines
     , input [reservation_width_lp-1:0] reservation_i
-    , input store_access_fault_v_i
-    , input load_access_fault_v_i
+
+	// Memory Pipeline faults
+    , input store_page_fault_v_i
+    , input load_page_fault_v_i
 	, input flush_i
 
+	// Page Table Walker Privilege Faults
 	, input priv_fault_i
 
+	// Pipe System Information
     , input [decode_info_width_lp-1:0] decode_pkt_i
     , input [trans_info_width_lp-1:0] trans_pkt_i
     , input [retire_pkt_width_lp-1:0] retire_pkt_i
     , input [commit_pkt_width_lp-1:0] commit_pkt_i
+	, input [wb_pkt_width_lp-1:0] late_wb_pkt_i
     );
 
 
@@ -43,8 +52,10 @@ module bp_nonsynth_uarch_tracer
   bp_be_issue_pkt_s issue_pkt;
   assign issue_pkt = issue_pkt_i;
 
+  logic [dispatch_pkt_width_lp-1:0] dispatch_pkt_D;
+
   bp_be_dispatch_pkt_s dispatch_pkt;
-  assign dispatch_pkt = dispatch_pkt_i;
+  assign dispatch_pkt = dispatch_pkt_D;
 
   bp_be_decode_info_s decode_pkt;
   assign decode_pkt = decode_pkt_i;
@@ -58,9 +69,11 @@ module bp_nonsynth_uarch_tracer
   bp_be_commit_pkt_s commit_pkt;
   assign commit_pkt = commit_pkt_i;
 
-bp_be_reservation_s reservation_pkt;
-assign reservation_pkt = reservation_i;
+  bp_be_reservation_s reservation_pkt;
+  assign reservation_pkt = reservation_i;
 
+  bp_be_wb_pkt_s wb_pkt;
+  assign wb_pkt = late_wb_pkt_i;
 
   logic [29:0] cycle_cnt;
   bsg_counter_clear_up
@@ -82,6 +95,9 @@ assign reservation_pkt = reservation_i;
 
   string pipe_mem_file;
   integer pipe_mem_fp;
+
+  string trace_file;
+  integer trace_fp;
   always_ff @(negedge reset_i)
     begin
       sched_file = $sformatf("%s_%x.sched", uarch_trace_file_p, mhartid_i);
@@ -93,6 +109,13 @@ assign reservation_pkt = reservation_i;
       pipe_mem_fp = $fopen(pipe_mem_file, "w");
       if (pipe_mem_fp)  $display("file was opened successfully : %0d", pipe_mem_fp);
               else     $display("file was not opened successfully : %0d", pipe_mem_fp);
+
+      trace_file = $sformatf("%s_%x.trace", uarch_trace_file_p, mhartid_i);
+      trace_fp = $fopen(trace_file, "w");
+      if (trace_fp)  $display("file was opened successfully : %0d", trace_fp);
+              else     $display("file was not opened successfully : %0d", trace_fp);
+
+
 
       $fwrite(sched_fp, "issue :cycle_cnt, issue_pkt.pc, fault, umode, smode, mmode\n");
       $fwrite(sched_fp, "dispatch: cycle_cnt, dispatch_pkt.pc, dispatch_pkt.v, dispatch_pkt.queue_v, poison_isd_i, dispatch_pkt.exception.mispredict\n");
@@ -107,11 +130,16 @@ assign reservation_pkt = reservation_i;
       if (~reset_i & fe_queue_read_i)
         $fwrite(sched_fp, "dispatch: %0d, %x, %x, %x, %x, %x\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.v, dispatch_pkt.queue_v, poison_isd_i, dispatch_pkt.exception.mispredict);
       if (~reset_i & commit_pkt.instret)
-        $fwrite(sched_fp, "commit: %0d,%x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+        $fwrite(sched_fp, "commit (ret): %0d,%x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
       if (~reset_i & commit_pkt.exception)
-        $fwrite(sched_fp, "commit: %0d,%x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+        $fwrite(sched_fp, "commit (exc): %0d,%x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+
+	  if (~reset_i & flush_i)
+		$fwrite(sched_fp, "flush: %0d\n", cycle_cnt);
+
     end
 
+  // Get memory-related requests
   wire [dword_width_gp-1:0] rs1 = reservation_pkt.isrc1;
   wire [dword_width_gp-1:0] rs2 = reservation_pkt.isrc2;
   wire [dword_width_gp-1:0] imm = reservation_pkt.isrc3;
@@ -123,16 +151,47 @@ assign reservation_pkt = reservation_i;
   always_ff @(negedge clk_i)
   begin
 	if (~reset_i & is_req)
-        $fwrite(pipe_mem_fp, "pipe_mem: %0d, %x, %x, %x, %x, %x, %x, %x\n", cycle_cnt, reservation_pkt.pc, reservation_pkt.decode.dcache_r_v, reservation_pkt.decode.dcache_w_v, eaddr, store_access_fault_v_i, load_access_fault_v_i, flush_i);
+        $fwrite(pipe_mem_fp, "pipe_mem: %0d, %x, %x, %x, %x, %x, %x, %x\n", cycle_cnt, reservation_pkt.pc, reservation_pkt.decode.dcache_r_v, reservation_pkt.decode.dcache_w_v, eaddr, store_page_fault_v_i, load_page_fault_v_i, flush_i);
        
-	if (~reset_i & (store_access_fault_v_i | load_access_fault_v_i))
-		$fwrite(pipe_mem_fp, "pipe_mem: %0d, %x, %x\n", cycle_cnt, store_access_fault_v_i, load_access_fault_v_i);
+	if (~reset_i & (store_page_fault_v_i | load_page_fault_v_i))
+		$fwrite(pipe_mem_fp, "pipe_mem: %0d, %x, %x\n", cycle_cnt, store_page_fault_v_i, load_page_fault_v_i);
   end
 
-  always_ff @(posedge clk_i or negedge clk_i)
+  always_ff @(posedge clk_i)
   begin
-	if (~reset_i & (priv_fault_i))
-		$fwrite(pipe_mem_fp, "page table walker: %0d, %x, %x, %x, %x\n", cycle_cnt, dispatch_pkt.pc, priv_fault_i,	dispatch_pkt.exception.store_page_fault, dispatch_pkt.exception.load_page_fault);
+	if (~reset_i & wb_pkt.ptw_w_v)
+		$fwrite(pipe_mem_fp, "ptw: %0d, %x, %x\n", cycle_cnt, wb_pkt.rd_addr,  wb_pkt.rd_data);
+  end
+
+
+  logic poison_isd_D;
+  byte priv_str[0:15];
+
+  always_ff @(posedge clk_i)
+  begin
+	dispatch_pkt_D <= dispatch_pkt_i;
+	poison_isd_D <= poison_isd_i;
+
+	if (~reset_i)
+	begin
+      if (dispatch_pkt.v) 
+	  begin
+    
+    	case (trans_pkt.priv_mode)
+        	2'b00: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "user");
+       		2'b01: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "supervisor");
+        	2'b11: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "machine");
+        	default: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "unknown");
+    	endcase
+
+
+	  end
+	  if (poison_isd_D)
+		$fwrite(trace_fp, "poisoned: %0d, %x\n", cycle_cnt, dispatch_pkt.pc);
+	  if (flush_i)
+		$fwrite(trace_fp, "flush: %0d\n", cycle_cnt);
+		
+	end
   end
 
  

@@ -66,7 +66,7 @@ module bp_be_scheduler
   `bp_cast_i(bp_be_wb_pkt_s, fwb_pkt);
   `bp_cast_i(bp_be_wb_pkt_s, late_wb_pkt);
   `bp_cast_i(bp_be_trans_info_s, trans_info);
-  logic priv_fault_lo;
+
   logic ptw_busy_lo;
   logic ptw_v_lo, ptw_walk_lo, ptw_itlb_fill_lo, ptw_dtlb_fill_lo;
   logic [fetch_ptr_p-1:0] ptw_count_lo;
@@ -100,8 +100,6 @@ module bp_be_scheduler
      ,.count_o(ptw_count_lo)
      ,.addr_o(ptw_addr_lo)
      ,.pte_o(ptw_pte_lo)
-     
-     ,.priv_fault_o(priv_fault_lo)
 
      ,.v_i(ptw_v_li)
      ,.data_i(ptw_data_li)
