@@ -521,6 +521,7 @@ module testbench
 
        ,.reservation_i(be.calculator.pipe_mem.reservation_i)
 
+	   ,.exception_ecode_i(be.calculator.pipe_sys.csr.exception_ecode_li)
 	   ,.store_page_fault_v_i(be.calculator.pipe_mem.store_page_fault_v_o)
 	   ,.load_page_fault_v_i(be.calculator.pipe_mem.load_page_fault_v_o)
 	   ,.flush_i(be.calculator.pipe_mem.flush_i)

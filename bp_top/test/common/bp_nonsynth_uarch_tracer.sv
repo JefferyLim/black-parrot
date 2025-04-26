@@ -30,6 +30,7 @@ module bp_nonsynth_uarch_tracer
     // Instructions in the calculator pipelines
     , input [reservation_width_lp-1:0] reservation_i
 
+	, input [3:0] exception_ecode_i
 	// Memory Pipeline faults
     , input store_page_fault_v_i
     , input load_page_fault_v_i
@@ -145,8 +146,8 @@ module bp_nonsynth_uarch_tracer
   wire [dword_width_gp-1:0] imm = reservation_pkt.isrc3;
 
   wire is_req = reservation_pkt.v & (reservation_pkt.decode.pipe_mem_early_v | reservation_pkt.decode.pipe_mem_final_v);
-  wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
-  
+ 
+  wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;  
 
   always_ff @(negedge clk_i)
   begin
@@ -164,33 +165,70 @@ module bp_nonsynth_uarch_tracer
   end
 
 
-  logic poison_isd_D;
-  byte priv_str[0:15];
+  
+  logic poison_isd_D; // 1 cycle delay of poison_isd
+
+   bp_be_decode_s decode_D;
+   bp_be_decode_s decode_DD;
+
+string exc_str;
+string priv_str;
+
+always_comb begin
+    case (exception_ecode_i)
+        4'h0: exc_str = "CAUSE_MISALIGNED_FETCH";
+        4'h1: exc_str = "CAUSE_FETCH_ACCESS";
+        4'h2: exc_str = "CAUSE_ILLEGAL_INSTRUCTION";
+        4'h3: exc_str = "CAUSE_BREAKPOINT";
+        4'h4: exc_str = "CAUSE_MISALIGNED_LOAD";
+        4'h5: exc_str = "CAUSE_LOAD_ACCESS";
+        4'h6: exc_str = "CAUSE_MISALIGNED_STORE";
+        4'h7: exc_str = "CAUSE_STORE_ACCESS";
+        4'h8: exc_str = "CAUSE_USER_ECALL";
+        4'h9: exc_str = "CAUSE_SUPERVISOR_ECALL";
+        4'ha: exc_str = "CAUSE_HYPERVISOR_ECALL";
+        4'hb: exc_str = "CAUSE_MACHINE_ECALL";
+        4'hc: exc_str = "CAUSE_FETCH_PAGE_FAULT";
+        4'hd: exc_str = "CAUSE_LOAD_PAGE_FAULT";
+        4'hf: exc_str = "CAUSE_STORE_PAGE_FAULT";
+        default: exc_str = "UNKNOWN_CAUSE";
+    endcase
+
+    case (trans_pkt.priv_mode)
+        	2'b00: priv_str = "user";
+       		2'b01: priv_str = "supervisor";
+        	2'b11: priv_str = "machine";
+			default: priv_str = "ERROR";
+	endcase
+end
 
   always_ff @(posedge clk_i)
   begin
+
+	// Delay dispatch, because the reservation signal is 1 cycle delayed
 	dispatch_pkt_D <= dispatch_pkt_i;
 	poison_isd_D <= poison_isd_i;
+	
+	decode_D <= dispatch_pkt.decode;
+	decode_DD <= decode_D;
+
 
 	if (~reset_i)
 	begin
-      if (dispatch_pkt.v) 
-	  begin
-    
-    	case (trans_pkt.priv_mode)
-        	2'b00: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "user");
-       		2'b01: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "supervisor");
-        	2'b11: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "machine");
-        	default: $fwrite(trace_fp, "dispatch: %0d, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, dispatch_pkt.queue_v, "unknown");
-    	endcase
+      // Write only memory pipeline requests
+	  if (dispatch_pkt.v & is_req)
+		$fwrite(trace_fp, "dispatch: %0d, %x, %x, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, reservation_pkt.pc, dispatch_pkt.queue_v, eaddr, priv_str);
 
-
-	  end
 	  if (poison_isd_D)
-		$fwrite(trace_fp, "poisoned: %0d, %x\n", cycle_cnt, dispatch_pkt.pc);
+		$fwrite(trace_fp, "poisoned: %0d, %x\n", cycle_cnt, issue_pkt.pc);
 	  if (flush_i)
 		$fwrite(trace_fp, "flush: %0d\n", cycle_cnt);
 		
+      if (commit_pkt.instret & (decode_DD.pipe_mem_early_v | decode_DD.pipe_mem_final_v))
+        $fwrite(trace_fp, "commit (ret): %0d, %x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+
+      if (commit_pkt.exception)
+        $fwrite(trace_fp, "commit (exc): %0d,%x, %x, %x, %s\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc, exc_str);
 	end
   end
 
