@@ -8,10 +8,18 @@ module bp_nonsynth_uarch_tracer
   import bp_be_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
 	 `declare_bp_proc_params(bp_params_p)
-     `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_tag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
+
+  , parameter assoc_p = 8
+  , parameter sets_p = 64
+  , parameter block_width_p = 512
+  , parameter fill_width_p = 512
+  , parameter trace_file_p = "dcache"
+  , parameter tag_width_p = dcache_tag_width_p
+  , parameter id_width_p = 1
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
+
      `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
      `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
-
     , parameter uarch_trace_file_p = "uarch"
     )
    (input                         clk_i
@@ -45,10 +53,24 @@ module bp_nonsynth_uarch_tracer
     , input [retire_pkt_width_lp-1:0] retire_pkt_i
     , input [commit_pkt_width_lp-1:0] commit_pkt_i
 	, input [wb_pkt_width_lp-1:0] late_wb_pkt_i
+
+
+    //DCache
+
+    , input cache_req_v_i
+    , input cache_req_yumi_i
+    , input cache_req_metadata_v_o
+    , input data_mem_pkt_v_i
+    , input data_mem_pkt_yumi_o
+    , input wbuf_v_li
+    , input wbuf_v_lo
+    , input wbuf_yumi_li
+	, input [dcache_req_width_lp-1:0]          cache_req_i
     );
 
 
   `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
 
   bp_be_issue_pkt_s issue_pkt;
   assign issue_pkt = issue_pkt_i;
@@ -75,6 +97,15 @@ module bp_nonsynth_uarch_tracer
 
   bp_be_wb_pkt_s wb_pkt;
   assign wb_pkt = late_wb_pkt_i;
+   
+
+
+
+  bp_be_dcache_pkt_s dcache_pkt_cast_i;
+
+  bp_be_dcache_req_s cache_req_cast_i;
+  assign cache_req_cast_i = cache_req_i;
+
 
   logic [29:0] cycle_cnt;
   bsg_counter_clear_up
@@ -173,6 +204,7 @@ module bp_nonsynth_uarch_tracer
 
 string exc_str;
 string priv_str;
+string dispatch_str;
 
 always_comb begin
     case (exception_ecode_i)
@@ -200,10 +232,18 @@ always_comb begin
         	2'b11: priv_str = "machine";
 			default: priv_str = "ERROR";
 	endcase
+
+
+	dispatch_str = "";
+ 	if(dispatch_pkt.decode.dcache_mmu_v & dispatch_pkt.decode.fu_op == e_dcache_op_ptw)
+		dispatch_str = "(ptw)";
+
 end
 
   always_ff @(posedge clk_i)
   begin
+
+
 
 	// Delay dispatch, because the reservation signal is 1 cycle delayed
 	dispatch_pkt_D <= dispatch_pkt_i;
@@ -217,18 +257,25 @@ end
 	begin
       // Write only memory pipeline requests
 	  if (dispatch_pkt.v & is_req)
-		$fwrite(trace_fp, "dispatch: %0d, %x, %x, %x, %x, %s\n", cycle_cnt, dispatch_pkt.pc, reservation_pkt.pc, dispatch_pkt.queue_v, eaddr, priv_str);
+		$fwrite(trace_fp, "dispatch %s: %0d, %x, %x, %x, %x, %s\n", dispatch_str, cycle_cnt, dispatch_pkt.pc, reservation_pkt.pc, dispatch_pkt.queue_v, eaddr, priv_str);
 
+      // Whenever branch predictors/npc does not match expected
 	  if (poison_isd_D)
 		$fwrite(trace_fp, "poisoned: %0d, %x\n", cycle_cnt, issue_pkt.pc);
+
+      // Whenever pipeline gets flushed
 	  if (flush_i)
-		$fwrite(trace_fp, "flush: %0d\n", cycle_cnt);
+		$fwrite(trace_fp, "pipe flush: %0d\n", cycle_cnt);
 		
       if (commit_pkt.instret & (decode_DD.pipe_mem_early_v | decode_DD.pipe_mem_final_v))
-        $fwrite(trace_fp, "commit (ret): %0d, %x, %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+        $fwrite(trace_fp, "commit (ret): %0d, %x, (npc) %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
 
       if (commit_pkt.exception)
         $fwrite(trace_fp, "commit (exc): %0d,%x, %x, %x, %s\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc, exc_str);
+	
+	  if (cache_req_v_i)
+		$fwrite(trace_fp, "cache: %0d, %x, %x, %x, %x\n", cycle_cnt, cache_req_cast_i.addr, cache_req_cast_i.data, cache_req_cast_i.msg_type, cache_req_yumi_i);
+
 	end
   end
 
