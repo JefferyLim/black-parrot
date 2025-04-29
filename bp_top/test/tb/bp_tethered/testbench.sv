@@ -538,11 +538,16 @@ module testbench
        ,.cache_req_yumi_i(be.calculator.pipe_mem.cache_req_yumi_i)
        ,.cache_req_i(be.calculator.pipe_mem.dcache.cache_req_o)
 	   ,.cache_req_metadata_v_o(be.calculator.pipe_mem.dcache.cache_req_metadata_v_o)
- 	   ,.data_mem_pkt_v_i(be.calculator.pipe_mem.dcache.data_mem_pkt_v_i)
+ 	   ,.data_mem_pkt_i(be.calculator.pipe_mem.dcache.data_mem_pkt_i)
+	   ,.data_mem_pkt_v_i(be.calculator.pipe_mem.dcache.data_mem_pkt_v_i)
  	   ,.data_mem_pkt_yumi_o(be.calculator.pipe_mem.dcache.data_mem_pkt_yumi_o)
  	   ,.wbuf_v_li(be.calculator.pipe_mem.dcache.wbuf_v_li)
  	   ,.wbuf_v_lo(be.calculator.pipe_mem.dcache.wbuf_v_lo)
  	   ,.wbuf_yumi_li(be.calculator.pipe_mem.dcache.wbuf_yumi_li)  
+	   ,.early_data_i(be.calculator.pipe_mem.early_data_o)
+       ,.early_v_i(be.calculator.pipe_mem.early_v_o)
+	   ,.final_data_i(be.calculator.pipe_mem.final_data_o)
+       ,.final_v_i(be.calculator.pipe_mem.final_v_o)
 );
 
   bind bp_me_clint_slice

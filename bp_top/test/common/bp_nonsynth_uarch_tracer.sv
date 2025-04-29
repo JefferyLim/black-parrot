@@ -60,12 +60,19 @@ module bp_nonsynth_uarch_tracer
     , input cache_req_v_i
     , input cache_req_yumi_i
     , input cache_req_metadata_v_o
-    , input data_mem_pkt_v_i
+    , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
+	, input data_mem_pkt_v_i
     , input data_mem_pkt_yumi_o
     , input wbuf_v_li
     , input wbuf_v_lo
     , input wbuf_yumi_li
 	, input [dcache_req_width_lp-1:0]          cache_req_i
+
+   , input [dpath_width_gp-1:0]    early_data_i
+   , input                         early_v_i
+   , input [dpath_width_gp-1:0]    final_data_i
+   , input                         final_v_i
+
     );
 
 
@@ -98,10 +105,9 @@ module bp_nonsynth_uarch_tracer
   bp_be_wb_pkt_s wb_pkt;
   assign wb_pkt = late_wb_pkt_i;
    
+  bp_be_dcache_data_mem_pkt_s data_mem_pkt;
+  assign data_mem_pkt = data_mem_pkt_i;
 
-
-
-  bp_be_dcache_pkt_s dcache_pkt_cast_i;
 
   bp_be_dcache_req_s cache_req_cast_i;
   assign cache_req_cast_i = cache_req_i;
@@ -268,7 +274,7 @@ end
 		$fwrite(trace_fp, "pipe flush: %0d\n", cycle_cnt);
 		
       if (commit_pkt.instret & (decode_DD.pipe_mem_early_v | decode_DD.pipe_mem_final_v))
-        $fwrite(trace_fp, "commit (ret): %0d, %x, (npc) %x, %x\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+        $fwrite(trace_fp, "commit (ret): %0d, %x, %x, %x (npc)\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
 
       if (commit_pkt.exception)
         $fwrite(trace_fp, "commit (exc): %0d,%x, %x, %x, %s\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc, exc_str);
@@ -276,6 +282,15 @@ end
 	  if (cache_req_v_i)
 		$fwrite(trace_fp, "cache: %0d, %x, %x, %x, %x\n", cycle_cnt, cache_req_cast_i.addr, cache_req_cast_i.data, cache_req_cast_i.msg_type, cache_req_yumi_i);
 
+	  if (data_mem_pkt_v_i)
+		$fwrite(trace_fp, "data_mem_pkt: %0d, %x\n", cycle_cnt,  data_mem_pkt.data);
+
+	  if(early_v_i)
+		$fwrite(trace_fp, "pipe_mem (early): %0d, %x\n", cycle_cnt, early_data_i);
+
+	  if(final_v_i)
+		$fwrite(trace_fp, "pipe_mem (final): %0d, %x\n", cycle_cnt, final_data_i);
+ 
 	end
   end
 
