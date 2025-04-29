@@ -12,7 +12,7 @@ module bp_nonsynth_uarch_tracer
   , parameter assoc_p = 8
   , parameter sets_p = 64
   , parameter block_width_p = 512
-  , parameter fill_width_p = 512
+  , parameter fill_width_p = 128
   , parameter trace_file_p = "dcache"
   , parameter tag_width_p = dcache_tag_width_p
   , parameter id_width_p = 1
@@ -46,6 +46,10 @@ module bp_nonsynth_uarch_tracer
 
 	// Page Table Walker Privilege Faults
 	, input priv_fault_i
+
+    , input tlb_load_miss_v_i
+    , input tlb_store_miss_v_i
+
 
 	// Pipe System Information
     , input [decode_info_width_lp-1:0] decode_pkt_i
@@ -249,8 +253,6 @@ end
   always_ff @(posedge clk_i)
   begin
 
-
-
 	// Delay dispatch, because the reservation signal is 1 cycle delayed
 	dispatch_pkt_D <= dispatch_pkt_i;
 	poison_isd_D <= poison_isd_i;
@@ -258,38 +260,41 @@ end
 	decode_D <= dispatch_pkt.decode;
 	decode_DD <= decode_D;
 
-
 	if (~reset_i)
 	begin
       // Write only memory pipeline requests
 	  if (dispatch_pkt.v & is_req)
-		$fwrite(trace_fp, "dispatch %s: %0d, %x, %x, %x, %x, %s\n", dispatch_str, cycle_cnt, dispatch_pkt.pc, reservation_pkt.pc, dispatch_pkt.queue_v, eaddr, priv_str);
+		$fwrite(trace_fp, "%0d: dispatch %s: %x, %x, %x, %x, %s\n", cycle_cnt, dispatch_str, dispatch_pkt.pc, reservation_pkt.pc, dispatch_pkt.queue_v, eaddr, priv_str);
 
       // Whenever branch predictors/npc does not match expected
 	  if (poison_isd_D)
-		$fwrite(trace_fp, "poisoned: %0d, %x\n", cycle_cnt, issue_pkt.pc);
+		$fwrite(trace_fp, "%0d: poisoned: %x\n", cycle_cnt, issue_pkt.pc);
 
       // Whenever pipeline gets flushed
 	  if (flush_i)
-		$fwrite(trace_fp, "pipe flush: %0d\n", cycle_cnt);
-		
-      if (commit_pkt.instret & (decode_DD.pipe_mem_early_v | decode_DD.pipe_mem_final_v))
-        $fwrite(trace_fp, "commit (ret): %0d, %x, %x, %x (npc)\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
-
-      if (commit_pkt.exception)
-        $fwrite(trace_fp, "commit (exc): %0d,%x, %x, %x, %s\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc, exc_str);
+		$fwrite(trace_fp, "%0d: pipe flush\n", cycle_cnt);
 	
+      // Track all architecture instruction returns	
+      if (commit_pkt.instret & (decode_DD.pipe_mem_early_v | decode_DD.pipe_mem_final_v))
+        $fwrite(trace_fp, "%0d: commit (ret): %x, %x, %x (npc)\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc);
+
+      // Track all exceptions
+      if (commit_pkt.exception)
+        $fwrite(trace_fp, "%0d: commit (exc): %x, %x, %x, %s\n", cycle_cnt, commit_pkt.pc, commit_pkt.npc_w_v, commit_pkt.npc, exc_str);
+	
+      // Track cache_req that leave dcache
 	  if (cache_req_v_i)
-		$fwrite(trace_fp, "cache: %0d, %x, %x, %x, %x\n", cycle_cnt, cache_req_cast_i.addr, cache_req_cast_i.data, cache_req_cast_i.msg_type, cache_req_yumi_i);
+		$fwrite(trace_fp, "%0d: cache: %x, %x, %x, (yumi) %x\n", cycle_cnt, cache_req_cast_i.addr, cache_req_cast_i.data, cache_req_cast_i.msg_type, cache_req_yumi_i);
 
+	  // Track all data packets that come in
 	  if (data_mem_pkt_v_i)
-		$fwrite(trace_fp, "data_mem_pkt: %0d, %x\n", cycle_cnt,  data_mem_pkt.data);
+		$fwrite(trace_fp, "%0d: data_mem_pkt: %x\n", cycle_cnt,  data_mem_pkt.data);
 
+      // Track all returns from memory pipe (including tlb misses
 	  if(early_v_i)
-		$fwrite(trace_fp, "pipe_mem (early): %0d, %x\n", cycle_cnt, early_data_i);
-
+		$fwrite(trace_fp, "%0d: pipe_mem (early): %x, (tlb load miss) %x, (tlb store miss) %x\n", cycle_cnt, early_data_i, tlb_load_miss_v_i, tlb_store_miss_v_i);
 	  if(final_v_i)
-		$fwrite(trace_fp, "pipe_mem (final): %0d, %x\n", cycle_cnt, final_data_i);
+		$fwrite(trace_fp, "%0d: pipe_mem (final): %x\n", cycle_cnt, final_data_i);
  
 	end
   end

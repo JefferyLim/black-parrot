@@ -526,6 +526,9 @@ module testbench
 	   ,.load_page_fault_v_i(be.calculator.pipe_mem.load_page_fault_v_o)
 	   ,.flush_i(be.calculator.pipe_mem.flush_i)
 
+       ,.tlb_load_miss_v_i(be.calculator.exc_stage_r[1].exc.dtlb_store_miss)
+       ,.tlb_store_miss_v_i(be.calculator.exc_stage_r[1].exc.dtlb_load_miss)
+
 	   ,.priv_fault_i(be.scheduler.ptw.priv_fault)
 
        ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
