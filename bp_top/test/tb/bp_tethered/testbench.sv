@@ -514,6 +514,12 @@ module testbench
 
        ,.mhartid_i(director.cfg_bus_cast_i.core_id)
 
+       ,.issue_pkt_i(be.scheduler.issue_pkt_cast_o)
+       ,.dispatch_pkt_i(be.scheduler.dispatch_pkt_cast_o)
+       
+       ,.poison_isd_i(be.scheduler.poison_isd_i)
+       ,.fe_queue_read_i(be.scheduler.issue_queue.read_i)
+
        ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
        ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)
        ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
