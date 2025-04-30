@@ -388,8 +388,8 @@ module testbench
     bp_nonsynth_vm_tracer
      #(.bp_params_p(bp_params_p))
      vm_tracer
-      (.clk_i(clk_i && testbench.vm_trace_p)
-       ,.reset_i(reset_i || testbench.vm_trace_p)
+      (.clk_i(clk_i & !testbench.freeze)
+       ,.reset_i(reset_i)
        ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.itlb_clear_i(fe.immu.tlb.fence_i)
@@ -520,6 +520,7 @@ module testbench
        ,.poison_isd_i(be.scheduler.poison_isd_i)
 
        ,.reservation_i(be.calculator.pipe_mem.reservation_i)
+	   ,.dcache_st_data_i(be.calculator.pipe_mem.dcache_st_data)
 
 	   ,.exception_ecode_i(be.calculator.pipe_sys.csr.exception_ecode_li)
 	   ,.store_page_fault_v_i(be.calculator.pipe_mem.store_page_fault_v_o)
