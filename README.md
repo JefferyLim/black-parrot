@@ -1,4 +1,4 @@
-hihii![BlackParrot Logo](docs/bp_logo.png)
+![BlackParrot Logo](docs/bp_logo.png)
 
 # BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/black-parrot/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/black-parrot/black-parrot/pipelines) [![Contributers](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]() [![Twitter Follow](https://img.shields.io/twitter/follow/BlackParrotCore.svg?style=social)](https://twitter.com/BlackParrotCore)
 
