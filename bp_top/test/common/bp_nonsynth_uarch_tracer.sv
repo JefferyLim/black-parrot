@@ -246,10 +246,11 @@ module bp_nonsynth_uarch_tracer
 	if (~reset_i)
 	begin
       // Write only memory pipeline requests
-	  if (dispatch_pkt.v & is_req & dcache_str == "load")
+	  if (dispatch_pkt.v & is_req & dcache_str == "load") begin
 		$fwrite(trace_fp, "%0d: dispatch %s: %x, %x, %s, %s\n", cycle_cnt, dispatch_str, dispatch_pkt.pc, eaddr, dcache_str, priv_str);
-	  if (dispatch_pkt.v & is_req & dcache_str == "store")
+	   end else if (dispatch_pkt.v & is_req) begin
 		$fwrite(trace_fp, "%0d: dispatch %s: %x, %x, %x, %s, %s\n", cycle_cnt, dispatch_str, dispatch_pkt.pc, eaddr, dcache_st_data_i, dcache_str, priv_str);
+		end
 
       // Whenever branch predictors/npc does not match expected
 	  if (poison_isd_D)
