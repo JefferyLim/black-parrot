@@ -20,7 +20,7 @@ export PROG  ?= hello_world
 export TAG   ?= none
 
 export BUILD_COLLATERAL := %/flist.vcs %/wrapper.sv %/testbench.sv
-export RUN_COLLATERAL := %/prog.nbf %/prog.mem %/prog.riscv %/prog.dump
+export RUN_COLLATERAL := %/prog.nbf %/prog.mem %/prog.riscv
 .PRECIOUS: $(BUILD_COLLATERAL) $(RUN_COLLATERAL)
 
 include $(BP_RTL_MK_DIR)/Makefile.common

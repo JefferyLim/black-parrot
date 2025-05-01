@@ -36,7 +36,6 @@ module testbench
    , parameter pc_profile_p                = 0
    , parameter br_profile_p                = 0
    , parameter dev_trace_p                 = 0
-   , parameter uarch_trace_p               = 0
 
    // COSIM parameters
    , parameter cosim_p                     = 0
@@ -388,8 +387,8 @@ module testbench
     bp_nonsynth_vm_tracer
      #(.bp_params_p(bp_params_p))
      vm_tracer
-      (.clk_i(clk_i & !testbench.freeze)
-       ,.reset_i(reset_i)
+      (.clk_i(clk_i && testbench.vm_trace_p)
+       ,.reset_i(reset_i || testbench.vm_trace_p)
        ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
        ,.itlb_clear_i(fe.immu.tlb.fence_i)
@@ -504,55 +503,6 @@ module testbench
 
        ,.commit_v_i(calculator.commit_pkt_cast_o.instret)
        );
-
-  bind bp_core_minimal
-    bp_nonsynth_uarch_tracer
-     #(.bp_params_p(bp_params_p))
-     uarch_tracer
-      (.clk_i(clk_i && !testbench.freeze)
-       ,.reset_i(reset_i)
-
-       ,.mhartid_i(be.director.cfg_bus_cast_i.core_id)
-       ,.issue_pkt_i(be.scheduler.issue_pkt_cast_o)
-
-       ,.dispatch_pkt_i(be.scheduler.dispatch_pkt_cast_o)
-       ,.fe_queue_read_i(be.scheduler.issue_queue.read_i)
-       ,.poison_isd_i(be.scheduler.poison_isd_i)
-
-       ,.reservation_i(be.calculator.pipe_mem.reservation_i)
-	   ,.dcache_st_data_i(be.calculator.pipe_mem.dcache_st_data)
-
-	   ,.exception_ecode_i(be.calculator.pipe_sys.csr.exception_ecode_li)
-	   ,.store_page_fault_v_i(be.calculator.pipe_mem.store_page_fault_v_o)
-	   ,.load_page_fault_v_i(be.calculator.pipe_mem.load_page_fault_v_o)
-	   ,.flush_i(be.calculator.pipe_mem.flush_i)
-
-       ,.tlb_load_miss_v_i(be.calculator.exc_stage_r[1].exc.dtlb_store_miss)
-       ,.tlb_store_miss_v_i(be.calculator.exc_stage_r[1].exc.dtlb_load_miss)
-
-	   ,.priv_fault_i(be.scheduler.ptw.priv_fault)
-
-       ,.decode_pkt_i(be.calculator.pipe_sys.decode_info_cast_o)
-       ,.trans_pkt_i(be.calculator.pipe_sys.trans_info_cast_o)
-       ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
-       ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt_cast_o)
-	   ,.late_wb_pkt_i(be.calculator.pipe_mem.late_wb_pkt_o)
- 
-       ,.cache_req_v_i(be.calculator.pipe_mem.dcache.cache_req_v_o)
-       ,.cache_req_yumi_i(be.calculator.pipe_mem.cache_req_yumi_i)
-       ,.cache_req_i(be.calculator.pipe_mem.dcache.cache_req_o)
-	   ,.cache_req_metadata_v_o(be.calculator.pipe_mem.dcache.cache_req_metadata_v_o)
- 	   ,.data_mem_pkt_i(be.calculator.pipe_mem.dcache.data_mem_pkt_i)
-	   ,.data_mem_pkt_v_i(be.calculator.pipe_mem.dcache.data_mem_pkt_v_i)
- 	   ,.data_mem_pkt_yumi_o(be.calculator.pipe_mem.dcache.data_mem_pkt_yumi_o)
- 	   ,.wbuf_v_li(be.calculator.pipe_mem.dcache.wbuf_v_li)
- 	   ,.wbuf_v_lo(be.calculator.pipe_mem.dcache.wbuf_v_lo)
- 	   ,.wbuf_yumi_li(be.calculator.pipe_mem.dcache.wbuf_yumi_li)  
-	   ,.early_data_i(be.calculator.pipe_mem.early_data_o)
-       ,.early_v_i(be.calculator.pipe_mem.early_v_o)
-	   ,.final_data_i(be.calculator.pipe_mem.final_data_o)
-       ,.final_v_i(be.calculator.pipe_mem.final_v_o)
-);
 
   bind bp_me_clint_slice
     bp_me_nonsynth_dev_tracer
