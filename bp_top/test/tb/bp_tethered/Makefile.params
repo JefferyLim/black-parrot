@@ -3,16 +3,16 @@ export CCE_MEM      = $(COH_PROTO).mem
 
 export CCE_TRACE_P    ?= 0
 export LCE_TRACE_P    ?= 0
-export CMT_TRACE_P    = 1
-export DRAM_TRACE_P   = 1
+export CMT_TRACE_P    ?= 1
+export DRAM_TRACE_P   ?= 1
 export ICACHE_TRACE_P ?= 0
-export DCACHE_TRACE_P = 1
-export VM_TRACE_P     = 1
+export DCACHE_TRACE_P ?= 1
+export VM_TRACE_P     ?= 1
 export CORE_PROFILE_P ?= 0
 export PC_PROFILE_P   ?= 0
 export BR_PROFILE_P   ?= 0
 export DEV_TRACE_P    ?= 0
-export UARCH_TRACE_P  = 1
+export UARCH_TRACE_P  ?= 1
 
 export COSIM_P         ?= 0
 export MAX_INSTR_P     ?= 0
