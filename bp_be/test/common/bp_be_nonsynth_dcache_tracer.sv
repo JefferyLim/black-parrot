@@ -112,6 +112,19 @@ module bp_be_nonsynth_dcache_tracer
   bp_be_dcache_wbuf_entry_s wbuf_entry_out_cast;
   assign wbuf_entry_out_cast = wbuf_entry_out;
 
+  logic [29:0] cycle_cnt;
+  bsg_counter_clear_up
+   #(.max_val_p(2**30-1), .init_val_p(0))
+   cycle_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(1'b0)
+     ,.up_i(1'b1)
+     ,.count_o(cycle_cnt)
+     );
+
+
   integer info_file, eng_file, mem_file, acc_file;
   string info_file_name, eng_file_name, mem_file_name, acc_file_name;
   always_ff @(negedge reset_i)
@@ -148,13 +161,13 @@ module bp_be_nonsynth_dcache_tracer
   always_ff @(posedge clk_i)
     begin
       if (v_i)
-        $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
+        $fwrite(acc_file, "%12t | %d access: %p\n", $time, cycle_cnt, dcache_pkt_cast_i);
       if (v_o & decode_tv_r.load_op)
-        $fwrite(acc_file, "%12t | load: [%x]->%x\n", $time, paddr_tv_r, data_o);
+        $fwrite(acc_file, "%12t | %d load: [%x]->%x\n", $time, cycle_cnt, paddr_tv_r, data_o);
       if (v_o & decode_tv_r.store_op)
-        $fwrite(acc_file, "%12t | store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
+        $fwrite(acc_file, "%12t | %d store: [%x]<-%x\n", $time, cycle_cnt, paddr_tv_r, st_data_tv_r);
       if (wbuf_yumi_li)
-        $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
+        $fwrite(acc_file, "%12t | %d wbuf: %p\n", $time, cycle_cnt, wbuf_entry_out_cast);
 
       if (cache_req_yumi_i)
         $fwrite(eng_file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);

@@ -3,15 +3,16 @@ export CCE_MEM      = $(COH_PROTO).mem
 
 export CCE_TRACE_P    ?= 0
 export LCE_TRACE_P    ?= 0
-export CMT_TRACE_P    ?= 0
-export DRAM_TRACE_P   ?= 0
+export CMT_TRACE_P    ?= 1
+export DRAM_TRACE_P   ?= 1
 export ICACHE_TRACE_P ?= 0
-export DCACHE_TRACE_P ?= 0
-export VM_TRACE_P     ?= 0
+export DCACHE_TRACE_P ?= 1
+export VM_TRACE_P     ?= 1
 export CORE_PROFILE_P ?= 0
 export PC_PROFILE_P   ?= 0
 export BR_PROFILE_P   ?= 0
 export DEV_TRACE_P    ?= 0
+export UARCH_TRACE_P  ?= 1
 
 export COSIM_P         ?= 0
 export MAX_INSTR_P     ?= 0
@@ -39,6 +40,7 @@ export TB_PARAMS  = \
                     -pvalue+pc_profile_p=$(PC_PROFILE_P) \
                     -pvalue+br_profile_p=$(BR_PROFILE_P) \
                     -pvalue+dev_trace_p=$(DEV_TRACE_P) \
+					-pvalue+uarch_trace_p=$(UARCH_TRACE_P) \
 					\
                     -pvalue+cosim_p=$(COSIM_P) \
 					-pvalue+max_instr_p=$(MAX_INSTR_P) \

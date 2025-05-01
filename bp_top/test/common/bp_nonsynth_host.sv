@@ -24,6 +24,7 @@ module bp_nonsynth_host
    , parameter br_profile_p           = 0
    , parameter cosim_p                = 0
    , parameter dev_trace_p            = 0
+   , parameter uarch_trace_p          = 0
    )
   (input                                            clk_i
    , input                                          reset_i
